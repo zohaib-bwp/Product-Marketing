@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - Product Marketing{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('product.index') }}">Home</a></li>
+            <li class="breadcrumb-item active">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" style="height: 400px; object-fit: cover;">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">{{ product.name }}</h2>
+                    <p class="text-muted">
+                        <i class="bi bi-tag"></i> {{ product.category_name or 'Uncategorized' }}
+                    </p>
+                    <hr>
+                    <h3 class="text-primary">${{ "%.2f"|format(product.price) }}</h3>
+                    <p class="mt-3">
+                        <span class="badge {% if product.stock_quantity > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                            {% if product.stock_quantity > 0 %}
+                                In Stock ({{ product.stock_quantity }} available)
+                            {% else %}
+                                Out of Stock
+                            {% endif %}
+                        </span>
+                    </p>
+                    <hr>
+                    <h5>Description</h5>
+                    <p class="card-text">{{ product.description or 'No description available.' }}</p>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" value="1" min="1" max="{{ product.stock_quantity }}" {% if product.stock_quantity == 0 %}disabled{% endif %}>
+                        </div>
+                    </div>
+                    <div class="mt-4 d-grid gap-2">
+                        <button class="btn btn-primary btn-lg" onclick="addToCart()" {% if product.stock_quantity == 0 %}disabled{% endif %}>
+                            <i class="bi bi-cart-plus"></i> Add to Cart
+                        </button>
+                        <a href="{{ url_for('product.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Continue Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function addToCart() {
+        const quantity = parseInt(document.getElementById('quantity').value);
+        const productId = {{ product.product_id }};
+        
+        if (quantity < 1 || quantity > {{ product.stock_quantity }}) {
+            showAlert('Invalid quantity', 'danger');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ product_id: productId, quantity: quantity })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showAlert(data.message, 'success');
+                updateCartBadge();
+            } else {
+                showAlert(data.message, 'danger');
+            }
+        } catch (error) {
+            showAlert('Error adding to cart', 'danger');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,287 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Profile Settings{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-gear"></i> Profile Settings
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin_profile.index') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Profile
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person"></i> Personal Information</h5>
+            </div>
+            <div class="card-body">
+                <form id="profileForm">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address *</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="bio" rows="4" placeholder="Tell us about yourself..."></textarea>
+                        <div class="form-text">A short bio about yourself (max 500 characters)</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-shield-lock"></i> Security Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="passwordForm">
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Current Password *</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">New Password *</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                        <div class="form-text">Minimum 8 characters with at least one number</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm New Password *</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-key"></i> Change Password
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-sliders2"></i> System Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="systemSettingsForm">
+                    <div id="systemSettingsContainer">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary"></div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">
+                        <i class="bi bi-save"></i> Save System Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load profile data
+async function loadProfileData() {
+    try {
+        const response = await fetch('/admin/profile/api/info');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('name').value = data.admin.name || '';
+            document.getElementById('email').value = data.admin.email || '';
+            document.getElementById('phone').value = data.admin.phone || '';
+            document.getElementById('address').value = data.admin.address || '';
+            document.getElementById('bio').value = data.admin.bio || '';
+        }
+    } catch (error) {
+        showAlert('Error loading profile data', 'danger');
+    }
+}
+
+// Update profile
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        address: document.getElementById('address').value,
+        bio: document.getElementById('bio').value
+    };
+    
+    try {
+        const response = await fetch('/admin/profile/api/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            loadProfileData();
+        } else {
+            showAlert(data.message, 'danger');
+        }
+    } catch (error) {
+        showAlert('Error updating profile', 'danger');
+    }
+});
+
+// Change password
+document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        showAlert('New passwords do not match', 'danger');
+        return;
+    }
+    
+    const formData = {
+        current_password: document.getElementById('currentPassword').value,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+    };
+    
+    try {
+        const response = await fetch('/admin/profile/api/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            document.getElementById('passwordForm').reset();
+        } else {
+            showAlert(data.message, 'danger');
+        }
+    } catch (error) {
+        showAlert('Error changing password', 'danger');
+    }
+});
+
+// Load system settings
+async function loadSystemSettings() {
+    try {
+        const response = await fetch('/admin/profile/api/system-settings');
+        const data = await response.json();
+        
+        if (data.success) {
+            const container = document.getElementById('systemSettingsContainer');
+            container.innerHTML = '';
+            
+            const settings = data.settings;
+            for (const [key, setting] of Object.entries(settings)) {
+                const formGroup = document.createElement('div');
+                formGroup.className = 'mb-3';
+                
+                let inputHtml = '';
+                if (setting.type === 'boolean') {
+                    inputHtml = `
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="${key}" name="${key}" ${setting.value ? 'checked' : ''}>
+                            <label class="form-check-label" for="${key}">${formatSettingKey(key)}</label>
+                        </div>
+                    `;
+                } else if (setting.type === 'textarea') {
+                    inputHtml = `
+                        <label class="form-label">${formatSettingKey(key)}</label>
+                        <textarea class="form-control" id="${key}" name="${key}" rows="3">${setting.value}</textarea>
+                        <small class="form-text text-muted">${setting.description}</small>
+                    `;
+                } else {
+                    inputHtml = `
+                        <label class="form-label">${formatSettingKey(key)}</label>
+                        <input type="${setting.type === 'number' ? 'number' : setting.type === 'email' ? 'email' : 'text'}" 
+                               class="form-control" id="${key}" name="${key}" value="${setting.value}">
+                        <small class="form-text text-muted">${setting.description}</small>
+                    `;
+                }
+                
+                formGroup.innerHTML = inputHtml;
+                container.appendChild(formGroup);
+            }
+        }
+    } catch (error) {
+        document.getElementById('systemSettingsContainer').innerHTML = '<p class="text-danger">Error loading system settings</p>';
+    }
+}
+
+function formatSettingKey(key) {
+    return key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+document.getElementById('systemSettingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const settings = {};
+    
+    for (let [key, value] of formData.entries()) {
+        const input = document.getElementById(key);
+        if (input && input.type === 'checkbox') {
+            settings[key] = input.checked;
+        } else {
+            settings[key] = value;
+        }
+    }
+    
+    try {
+        const response = await fetch('/admin/profile/api/system-settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ settings: settings })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+        } else {
+            showAlert(data.message, 'danger');
+        }
+    } catch (error) {
+        showAlert('Error saving settings', 'danger');
+    }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    loadProfileData();
+    loadSystemSettings();
+});
+</script>
+{% endblock %}

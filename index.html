@@ -1,154 +1,243 @@
-{% extends "base.html" %}
+{% extends "admin/base_admin.html" %}
 
-{% block title %}Home - Product Marketing{% endblock %}
+{% block title %}Admin Profile{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Hero Section -->
-    <div class="bg-white p-5 rounded shadow-sm mb-4">
-        <h1 class="display-4">Welcome to Product Marketing</h1>
-        <p class="lead">Discover amazing products at great prices!</p>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-person-circle"></i> My Profile
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin_profile.settings') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-gear"></i> Profile Settings
+        </a>
     </div>
+</div>
 
-    <!-- Filters -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="input-group">
-                <input type="text" class="form-control" id="searchInput" placeholder="Search products...">
-                <button class="btn btn-primary" onclick="loadProducts()">
-                    <i class="bi bi-search"></i> Search
-                </button>
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="position-relative d-inline-block">
+                    <img id="profilePicturePreview" 
+                         src="https://ui-avatars.com/api/?background=6366f1&color=fff&name={{ session.user_name }}" 
+                         alt="Profile Picture" 
+                         class="rounded-circle mb-3"
+                         style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #6366f1;">
+                    <button class="btn btn-sm btn-primary position-absolute bottom-0 end-0 rounded-circle" 
+                            style="width: 40px; height: 40px;" 
+                            onclick="document.getElementById('profilePictureInput').click()">
+                        <i class="bi bi-camera"></i>
+                    </button>
+                    <input type="file" id="profilePictureInput" style="display: none;" accept="image/*">
+                </div>
+                
+                <h4 id="profileName">Loading...</h4>
+                <p class="text-muted" id="profileRole">Administrator</p>
+                
+                <div class="mt-3">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Member since</small>
+                            <p id="memberSince" class="mb-0">-</p>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Last login</small>
+                            <p id="lastLogin" class="mb-0">-</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <select class="form-select" id="categoryFilter" onchange="loadProducts()">
-                <option value="">All Categories</option>
-            </select>
-        </div>
     </div>
-
-    <!-- Products Grid -->
-    <div class="row" id="productsContainer">
-        <div class="col-12 text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#profileInfo">
+                            <i class="bi bi-info-circle"></i> Profile Information
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#activityLog">
+                            <i class="bi bi-clock-history"></i> Activity Log
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <!-- Profile Information Tab -->
+                    <div class="tab-pane fade show active" id="profileInfo">
+                        <div class="row mb-3">
+                            <div class="col-md-3 fw-bold">Full Name:</div>
+                            <div class="col-md-9" id="infoName">-</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-3 fw-bold">Email Address:</div>
+                            <div class="col-md-9" id="infoEmail">-</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-3 fw-bold">Phone Number:</div>
+                            <div class="col-md-9" id="infoPhone">-</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-3 fw-bold">Address:</div>
+                            <div class="col-md-9" id="infoAddress">-</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-3 fw-bold">Bio:</div>
+                            <div class="col-md-9" id="infoBio">-</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Activity Log Tab -->
+                    <div class="tab-pane fade" id="activityLog">
+                        <div id="activityLogContainer">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary"></div>
+                                <p>Loading activity log...</p>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="loadActivityLog(1)" id="loadMoreBtn" style="display: none;">
+                                Load More
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-    // Load categories
-    async function loadCategories() {
-        try {
-            const response = await fetch('/api/categories');
-            const data = await response.json();
-            
-            if (data.success) {
-                const select = document.getElementById('categoryFilter');
-                data.categories.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat.category_id;
-                    option.textContent = cat.category_name;
-                    select.appendChild(option);
-                });
-            }
-        } catch (error) {
-            console.error('Error loading categories:', error);
-        }
-    }
+let currentPage = 1;
+let totalPages = 1;
 
-    // Load products
-    async function loadProducts() {
-        const container = document.getElementById('productsContainer');
-        container.innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-primary"></div></div>';
+// Load profile data
+async function loadProfile() {
+    try {
+        const response = await fetch('/admin/profile/api/info');
+        const data = await response.json();
         
-        const categoryId = document.getElementById('categoryFilter').value;
-        const search = document.getElementById('searchInput').value;
-        
-        let url = '/api/products?';
-        if (categoryId) url += `category_id=${categoryId}&`;
-        if (search) url += `search=${encodeURIComponent(search)}`;
-        
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
+        if (data.success) {
+            const admin = data.admin;
             
-            if (data.success) {
-                if (data.products.length === 0) {
-                    container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">No products found</p></div>';
-                    return;
-                }
-                
-                container.innerHTML = '';
-                data.products.forEach(product => {
-                    const col = document.createElement('div');
-                    col.className = 'col-md-4 col-lg-3 mb-4';
-                    col.innerHTML = `
-                        <div class="card h-100">
-                            <img src="${product.image_url}" class="card-img-top product-img" alt="${product.name}">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">${product.name}</h5>
-                                <p class="card-text text-muted small">${product.category_name || 'Uncategorized'}</p>
-                                <p class="card-text flex-grow-1">${product.description ? product.description.substring(0, 60) + '...' : ''}</p>
-                                <div class="mt-auto">
-                                    <p class="h5 text-primary mb-2">$${parseFloat(product.price).toFixed(2)}</p>
-                                    <p class="small text-muted mb-2">Stock: ${product.stock_quantity}</p>
-                                    <div class="d-grid gap-2">
-                                        <a href="/product/${product.product_id}" class="btn btn-outline-primary btn-sm">View Details</a>
-                                        <button onclick="addToCart(${product.product_id})" class="btn btn-primary btn-sm" ${product.stock_quantity === 0 ? 'disabled' : ''}>
-                                            <i class="bi bi-cart-plus"></i> Add to Cart
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+            // Update basic info
+            document.getElementById('profileName').textContent = admin.name;
+            document.getElementById('infoName').textContent = admin.name;
+            document.getElementById('infoEmail').textContent = admin.email;
+            document.getElementById('infoPhone').textContent = admin.phone || 'Not provided';
+            document.getElementById('infoAddress').textContent = admin.address || 'Not provided';
+            document.getElementById('infoBio').textContent = admin.bio || 'No bio added yet';
+            document.getElementById('memberSince').textContent = admin.created_at ? new Date(admin.created_at).toLocaleDateString() : '-';
+            document.getElementById('lastLogin').textContent = admin.last_login ? new Date(admin.last_login).toLocaleString() : 'First login';
+            
+            // Update profile picture
+            if (admin.profile_picture) {
+                const imgUrl = "/static/" + admin.profile_picture;
+                document.getElementById('profilePicturePreview').src = imgUrl + '?t=' + Date.now();
+            }
+        }
+    } catch (error) {
+        showAlert('Error loading profile', 'danger');
+    }
+}
+
+// Upload profile picture
+document.getElementById('profilePictureInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+    
+    try {
+        const response = await fetch('/admin/profile/api/upload-picture', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            document.getElementById('profilePicturePreview').src = data.url + '?t=' + Date.now();
+            loadProfile();
+        } else {
+            showAlert(data.message, 'danger');
+        }
+    } catch (error) {
+        showAlert('Error uploading picture', 'danger');
+    }
+});
+
+// Load activity log
+async function loadActivityLog(page = 1) {
+    currentPage = page;
+    
+    try {
+        const response = await fetch(`/admin/profile/api/activity-log?page=${page}&limit=10`);
+        const data = await response.json();
+        
+        if (data.success) {
+            totalPages = data.pagination.pages;
+            
+            if (page === 1) {
+                document.getElementById('activityLogContainer').innerHTML = '';
+            }
+            
+            if (data.logs.length === 0 && page === 1) {
+                document.getElementById('activityLogContainer').innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p>No activity logs found</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            data.logs.forEach(log => {
+                const logDiv = document.createElement('div');
+                logDiv.className = 'border-bottom pb-2 mb-2';
+                logDiv.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong><i class="bi bi-record-circle"></i> ${log.action}</strong>
+                            <p class="small text-muted mb-0">${log.details || 'No details'}</p>
+                            <small class="text-muted">IP: ${log.ip_address || 'N/A'}</small>
                         </div>
-                    `;
-                    container.appendChild(col);
-                });
-            }
-        } catch (error) {
-            container.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading products</p></div>';
-        }
-    }
-
-    // Add to cart
-    async function addToCart(productId) {
-        try {
-            const response = await fetch('/api/cart/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ product_id: productId, quantity: 1 })
+                        <small class="text-muted">${new Date(log.created_at).toLocaleString()}</small>
+                    </div>
+                `;
+                document.getElementById('activityLogContainer').appendChild(logDiv);
             });
             
-            const data = await response.json();
-            
-            if (data.success) {
-                showAlert(data.message, 'success');
-                updateCartBadge();
+            // Show/hide load more button
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            if (page < totalPages) {
+                loadMoreBtn.style.display = 'inline-block';
             } else {
-                showAlert(data.message, 'danger');
+                loadMoreBtn.style.display = 'none';
             }
-        } catch (error) {
-            showAlert('Error adding to cart', 'danger');
         }
+    } catch (error) {
+        document.getElementById('activityLogContainer').innerHTML = '<p class="text-danger">Error loading activity log</p>';
     }
+}
 
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', () => {
-        loadCategories();
-        loadProducts();
-    });
+// Load more logs
+document.getElementById('loadMoreBtn')?.addEventListener('click', () => {
+    loadActivityLog(currentPage + 1);
+});
 
-    // Search on Enter key
-    document.getElementById('searchInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            loadProducts();
-        }
-    });
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    loadProfile();
+    loadActivityLog(1);
+});
 </script>
 {% endblock %}
