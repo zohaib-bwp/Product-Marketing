@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Order Details{% endblock %}
+{% block content %}
+<div class="card mt-4">
+  <div class="card-body">
+    <h3>Order #{{ order.order_id if order else 'N/A' }}</h3>
+    <p class="text-muted">The order detail page is ready for the connected database.</p>
+  </div>
+</div>
+{% endblock %}

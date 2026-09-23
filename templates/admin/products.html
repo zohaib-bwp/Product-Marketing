@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="card mt-4">
+  <div class="card-body">
+    <h3>Admin dashboard</h3>
+    <div class="row mt-4">
+      <div class="col-md-4"><div class="card bg-light"><div class="card-body"><h5>Total products</h5><h2>{{ total_products or 0 }}</h2></div></div></div>
+      <div class="col-md-4"><div class="card bg-light"><div class="card-body"><h5>Total orders</h5><h2>{{ total_orders or 0 }}</h2></div></div></div>
+      <div class="col-md-4"><div class="card bg-light"><div class="card-body"><h5>Pending</h5><h2>{{ pending_orders or 0 }}</h2></div></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

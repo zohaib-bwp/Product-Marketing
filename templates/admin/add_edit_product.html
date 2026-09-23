@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Admin Products{% endblock %}
+{% block content %}
+<div class="card mt-4">
+  <div class="card-body">
+    <h3>Product catalog</h3>
+    {% if products %}
+      <table class="table table-striped mt-3">
+        <thead><tr><th>ID</th><th>Name</th><th>Price</th></tr></thead>
+        <tbody>
+          {% for product in products %}
+          <tr><td>{{ product.product_id }}</td><td>{{ product.name }}</td><td>${{ "%.2f"|format(product.price) }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="alert alert-info mt-3">No products found. The database is not populated yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

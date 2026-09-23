@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Orders{% endblock %}
+{% block content %}
+<div class="card mt-4">
+  <div class="card-body">
+    <h3>My orders</h3>
+    {% if orders %}
+      <ul class="list-group">
+        {% for order in orders %}
+        <li class="list-group-item">Order #{{ order.order_id }} — {{ order.status }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="alert alert-info mt-3">No orders yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
